@@ -488,10 +488,7 @@
             multiSubmitBar.classList.add('hidden');
 
             const currentQuestion = currentQuestions[currentIndex];
-            
-            // 核心修复点：将 textContent 替换为 innerHTML
             questionText.innerHTML = `(${currentIndex + 1}/10) ${currentQuestion.question}`;
-            
             scoreBadge.textContent = `得分: ${score}`;
             
             // 实时更新顶部进度与百分比动画
@@ -583,7 +580,7 @@
         }
 
         // ==========================================
-        // 6. 核验与正误判定（答错统一展示解析与下一题按钮）
+        // 6. 核验与正误判定（核心修复 Bug 点）
         // ==========================================
         function checkYourAnswer() {
             if (isAnswered) return;
@@ -624,6 +621,11 @@
             }
         }
 
+        // 下一题按钮的点击流重写：明确解开判定状态锁
+        nextBtn.onclick = () => {
+            goToNextQuestion();
+        };
+
         // 点击提交控制触发
         submitAnswerBtn.onclick = () => {
             if (selectedIndexes.length === 0) {
@@ -634,6 +636,8 @@
         };
 
         function goToNextQuestion() {
+            // 每次切换下一题前，必须强制重置判定状态，否则会继承前一题的状态锁导致卡死
+            isAnswered = false; 
             currentIndex++;
             if (currentIndex < 10 && currentIndex < currentQuestions.length) {
                 renderQuestion();
