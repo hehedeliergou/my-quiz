@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用智能刷题系统</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script>
+        // 允许手动控制暗黑模式的配置
+        window.tailwind = {
+            config: {
+                darkMode: 'class'
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+    <header class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl font-bold tracking-tight bg-gradient-to-r fancy-title bg-clip-text text-transparent from-indigo-500 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+                    Smart Quiz DIY
+                </span>
+                <select id="bankSelect" class="bg-slate-100 dark:bg-slate-700 text-sm font-medium rounded-lg px-3 py-1.5 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </select>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-full" id="progressText">
+                    进度: 0/0
+                </div>
+                <button id="themeToggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <div id="questionArea" class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700/50 p-6 md:p-8 transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <span id="typeBadge" class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
+                    SINGLE
+                </span>
+                <span id="scoreBadge" class="text-sm font-medium text-slate-400">
+                    得分: 0
+                </span>
+            </div>
+
+            <h2 id="questionText" class="text-lg md:text-xl font-semibold leading-relaxed mb-6">
+                正在加载题目...
+            </h2>
+
+            <div id="optionsContainer" class="space-y-3.5 mb-6">
+                </div>
+
+            <div id="multiSubmitBar" class="hidden flex justify-end mb-6">
+                <button id="submitAnswerBtn" class="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl shadow-md hover:from-indigo-600 hover:to-purple-700 transition-all transform active:scale-95">
+                    提交答案 (Enter)
+                </button>
+            </div>
+
+            <div id="explainArea" class="hidden p-5 bg-slate-50 dark:bg-slate-700/40 border border-slate-100 dark:border-slate-700 rounded-xl mb-6 animate-fadeIn">
+                <div class="flex items-center space-x-2 mb-2">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    <h3 class="font-bold text-sm tracking-wide uppercase text-slate-400">参考解析</h3>
+                </div>
+                <p id="explainText" class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    暂无解析
+                </p>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/60 pt-4">
+                <div class="w-1/2 bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full w-0 transition-all duration-300"></div>
+                </div>
+                <button id="nextBtn" class="hidden px-5 py-2 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl shadow hover:bg-slate-700 dark:hover:bg-slate-200 transition-all">
+                    下一题 (Enter)
+                </button>
+            </div>
+        </div>
+
+        <div id="resultArea" class="hidden bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 text-center border border-slate-100 dark:border-slate-700/50 max-w-md mx-auto">
+            <div class="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 dark:text-indigo-400 rounded-full flex items-center justify-between mx-auto mb-4">
+                <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">一轮练习已完成</h2>
+            <p id="resultScore" class="text-slate-500 dark:text-slate-400 mb-6 text-sm">您的最终得分为：0 / 0</p>
+            <button id="restartBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg transition-colors">
+                开始下一轮 (Enter)
+            </button>
+        </div>
+    </main>
+
+    <script>
+        // ==========================================
+        // 外部动态数据中心 (Standardized Multi-Bank Dynamic Object Format)
+        // ==========================================
+        const DATA_CENTER = {
+            "大物": [
+                {
+                    "type": "single",
+                    "question": "某质点运动方程为 x = 2t - t³ + 6 (SI)，则该质点作（  ）",
+                    "options": [
+                        "匀加速直线运动，加速度沿 x 轴正方向",
+                        "匀加速直线运动，加速度沿 x 轴负方向",
+                        "变加速直线运动，加速度沿 x 轴正方向",
+                        "变加速直线运动，加速度沿 x 轴负方向"
+                    ],
+                    "answer": [3],
+                    "explain": "速解：位移含 t³，对其求二次导数得到加速度 a = -6t，随时间变化，故为变加速直线运动。负号说明加速度沿 x 轴负方向。选 D。"
+                },
+                {
+                    "type": "single",
+                    "question": "飞轮做匀减速转动，10s 内角速度从 40π rad/s 减小到 10π rad/s，则角加速度的大小为（  ）rad/s²",
+                    "options": ["6π", "12π", "3π", "9π"],
+                    "answer": [2],
+                    "explain": "速解：根据角加速度大小公式：|α| = |Δω| / Δt = (40π - 10π) / 10 = 3π。选 C。"
+                }
+            ],
+            "联合冶金技术": [
+                {
+                  "type": "single",
+                  "question": "According to the text, what is the main feature of combining metallurgical processes?",
+                  "options": [
+                    "Reduction of carbon emissions;",
+                    "Preservation and use of high metal temperature from the previous conversion",
+                    "Increasing the number of rolling stands."
+                  ],
+                  "answer": [1],
+                  "explain": "According to the material, the main feature of combining metallurgical processes is preservation and use of high metal temperature from the previous conversion."
+                },
+                {
+                  "type": "single",
+                  "question": "What is the typical thickness range for 'thin slabs' according to the classification in the material?",
+                  "options": [
+                    "150-91mm;",
+                    "90-40mm;",
+                    "300-151mm."
+                  ],
+                  "answer": [1],
+                  "explain": "The typical thickness range for thin slabs is 90-40mm."
+                },
+                {
+                  "type": "single",
+                  "question": "What is the purpose of CoilBOX in a hot rolling mill?",
+                  "options": [
+                    "To increase the rolling speed",
+                    "To remove scale from the metal surface",
+                    "To create a uniform temperature of the metal in the front and back parts of the Strip"
+                  ],
+                  "answer": [2],
+                  "explain": "Coilbox creates a uniform temperature of the metal in the front and back parts of the strip."
+                },
+                {
+                  "type": "single",
+                  "question": "Equipment that uses the thermal effect of an electric arc to melt metals and other materials:",
+                  "options": [
+                    "Blast furnace",
+                    "Electric arc furnace",
+                    "Tunnel heating furnace"
+                  ],
+                  "answer": [1],
+                  "explain": "The equipment utilizing the thermal effect of an electric arc to melt metal is the Electric Arc Furnace (EAF)."
+                },
+                {
+                  "type": "single",
+                  "question": "Electromagnetic mixing (EMS) in continuous casting is primarily used to:",
+                  "options": [
+                    "Increase casting speed",
+                    "Prevent the formation of crystallization, shrinkage, and liquation defects",
+                    "Heat the slab before rolling"
+                  ],
+                  "answer": [1],
+                  "explain": "EMS is primarily used to prevent defects such as crystallization, shrinkage, and liquation."
+                },
+                {
+                  "type": "single",
+                  "question": "What is the main purpose of 'edger' (vertical edging stand) in a casting and rolling line?",
+                  "options": [
+                    "To produce smooth, even edges and control strip width",
+                    "To increase the strip thickness",
+                    "To cool the strip edges"
+                  ],
+                  "answer": [0],
+                  "explain": "Vertical edgers produce smooth, even edges on sheets and slabs, and control the strip width."
+                },
+                {
+                  "type": "single",
+                  "question": "What is the main purpose of Steckel mill?",
+                  "options": [
+                    "Reversing hot rolling with coiling furnaces to maintain temperature",
+                    "High-speed continuous rolling of thin strips",
+                    "Casting liquid steel directly into strips"
+                  ],
+                  "answer": [0],
+                  "explain": "Steckel mill cooperates with coiling furnaces on both sides to achieve reversible hot rolling and maintain temperature."
+                },
+                {
+                  "type": "single",
+                  "question": "The UTHS (UltraThin Hot Strip) technology is characterized by the use of which type of rolling mill with very high compressive capacity (up to 95-98%)?",
+                  "options": [
+                    "Steckel mill",
+                    "Planetary mill",
+                    "Tandem cold mill"
+                  ],
+                  "answer": [1],
+                  "explain": "UTHS process adopts a planetary mill to achieve a reduction rate of 95%~98%."
+                },
+                {
+                  "type": "single",
+                  "question": "What is the function of 'water descaling' in a hot rolling mill?",
+                  "options": [
+                    "To remove scale from the metal surface using high-pressure water",
+                    "To cool the work rolls",
+                    "To lubricate the strip before rolling"
+                  ],
+                  "answer": [0],
+                  "explain": "High-pressure water descaling utilizes high-pressure water flow to clean and remove iron oxide scale from the slab surface."
+                },
+                {
+                  "type": "single",
+                  "question": "What is the main function of a tunnel furnace in a casting and rolling unit?",
+                  "options": [
+                    "To melt the scrap metal",
+                    "To equalize the temperature of the slab along the cross-section and act as a buffer",
+                    "To cut the slab into measured lengths"
+                  ],
+                  "answer": [1],
+                  "explain": "The tunnel furnace equalizes temperatures over the volume of the slab and acts as a technological buffer."
+                },
+                {
+                  "type": "single",
+                  "question": "Equipment designed for smelting cast iron from raw materials or mixtures of ore, coke and fluxed additions:",
+                  "options": [
+                    "Blast furnace",
+                    "Electric arc furnace",
+                    "Tunnel heating furnace"
+                  ],
+                  "answer": [0],
+                  "explain": "The blast furnace uses ore, coke, and flux as raw materials to smelt pig iron / cast iron."
+                },
+                {
+                  "type": "single",
+                  "question": "What casting-rolling technology is the CASTRIP process based on?",
+                  "options": [
+                    "Thin slab casting in a curved mold",
+                    "Medium slab casting with soft reduction",
+                    "Twin-roll strip casting"
+                  ],
+                  "answer": [2],
+                  "explain": "The CASTRIP process is developed based on twin-roll strip casting technology."
+                },
+                {
+                  "type": "single",
+                  "question": "The equipment shown in the figure (图一):<br><img src='./image/image1.png' class='max-w-full h-auto mx-auto my-2 rounded shadow-md border dark:border-slate-700' alt='图一'>",
+                  "options": [
+                    "Edger",
+                    "Horizontal roll",
+                    "Steckel mill",
+                    "Looper"
+                  ],
+                  "answer": [0],
+                  "explain": "图一展示的是立轧机（Edger），主要用于控制带钢宽度并使其边缘平整。"
+                },
+                {
+                  "type": "single",
+                  "question": "The equipment shown in the figure (图二):<br><img src='./image/image2.png' class='max-w-full h-auto mx-auto my-2 rounded shadow-md border dark:border-slate-700' alt='图二'>",
+                  "options": [
+                    "Looper",
+                    "Edger",
+                    "Steckel mill",
+                    "Water descaling"
+                  ],
+                  "answer": [3],
+                  "explain": "图二展示的是高压水除鳞装置（Water descaling），利用高压水冲洗掉坯料表面的氧化铁皮。"
+                },
+                {
+                  "type": "single",
+                  "question": "The equipment shown in the figure (图三):<br><img src='./image/image3.png' class='max-w-full h-auto mx-auto my-2 rounded shadow-md border dark:border-slate-700' alt='图三'>",
+                  "options": [
+                    "Reduction stands",
+                    "CoilBOX",
+                    "Downcoilers",
+                    "Steckel mill"
+                  ],
+                  "answer": [3],
+                  "explain": "图三展示的是施特克尔轧机（Steckel mill），带卷在两侧的热卷箱/加热炉中来回可逆轧制。"
+                },
+                {
+                  "type": "single",
+                  "question": "What is 'looper' used for in a continuous hot rolling mill?",
+                  "options": [
+                    "To remove scale from the strip surface",
+                    "To cut the strip into coils",
+                    "To regulate the tension of the strip between finishing stands"
+                  ],
+                  "answer": [2],
+                  "explain": "The looper device adjusts and regulates the tension of the strip between the stands to ensure rolling stability."
+                },
+                {
+                  "type": "single",
+                  "question": "What is the typical casting speed for 'cast strip' (thickness 5.0-0.8 mm)?",
+                  "options": [
+                    "1.0-2.5 m/min",
+                    "2.5-7.5 m/min",
+                    "60-120 m/min"
+                  ],
+                  "answer": [2],
+                  "explain": "The typical casting speed range for cast thin strip steel under thin strip casting technology is 60-120 m/min."
+                },
+                {
+                  "type": "single",
+                  "question": "What is the main advantage of the 'semi-endless rolling mode' compared to coil-to-coil mode?",
+                  "options": [
+                    "Higher casting speed",
+                    "Ability to use a Steckel mill",
+                    "Less material loss because there are fewer head and tail end crops"
+                  ],
+                  "answer": [2],
+                  "explain": "The main advantage of the semi-endless rolling mode is less crop loss at the head and tail of the strip, leading to lower material loss."
+                },
+                {
+                  "type": "single",
+                  "question": "The equipment shown in the figure (图四):<br><img src='./image/image4.png' class='max-w-full h-auto mx-auto my-2 rounded shadow-md border dark:border-slate-700' alt='图四'>",
+                  "options": [
+                    "Twin-roll",
+                    "Twin-belt",
+                    "Bow-type",
+                    "Curved-mode"
+                  ],
+                  "answer": [0],
+                  "explain": "图四展示的是双辊薄带连铸技术（Twin-roll），钢水直接通过两个反向旋转的结晶辊铸造成带坯。"
+                },
+                {
+                  "type": "single",
+                  "question": "The equipment shown in the figure (图五):<br><img src='./image/image5.png' class='max-w-full h-auto mx-auto my-2 rounded shadow-md border dark:border-slate-700' alt='图五'>",
+                  "options": [
+                    "Reduction stand",
+                    "Water descaling",
+                    "Looper",
+                    "Downcoiler"
+                  ],
+                  "answer": [2],
+                  "explain": "图五展示的是活套装置（Looper），动态调节精轧机架间的带钢张力。"
+                },
+                {
+                  "type": "single",
+                  "question": "The equipment shown in the figure (图六):<br><img src='./image/image6.png' class='max-w-full h-auto mx-auto my-2 rounded shadow-md border dark:border-slate-700' alt='图六'>",
+                  "options": [
+                    "Tunnel furnace",
+                    "Water descaling",
+                    "Reduction stands",
+                    "Steckel mill"
+                  ],
+                  "answer": [0],
+                  "explain": "图六展示的是薄板坯连铸连轧线中的隧道加热炉（Tunnel furnace），起到均热与工艺缓冲的作用。"
+                }
+            ]
+        };
+
+        // ==========================================
+        // 核心状态管理变量
+        // ==========================================
+        let currentBankKey = "";
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let isAnswered = false; // 当前题判定状态锁
+        let selectedIndexes = []; // 暂存用户对当前题勾选的选项索引组
+        let currentRenderedOptionsOrder = []; // 映射随机打乱后的原始索引关系
+
+        // 历史去重缓存
+        let historyRecords = JSON.parse(localStorage.getItem('quizHistory')) || {};
+
+        // DOM 元素引用
+        const bankSelect = document.getElementById('bankSelect');
+        const questionArea = document.getElementById('questionArea');
+        const resultArea = document.getElementById('resultArea');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const typeBadge = document.getElementById('typeBadge');
+        const scoreBadge = document.getElementById('scoreBadge');
+        const progressText = document.getElementById('progressText');
+        const progressBar = document.getElementById('progressBar');
+        const multiSubmitBar = document.getElementById('multiSubmitBar');
+        const submitAnswerBtn = document.getElementById('submitAnswerBtn');
+        const explainArea = document.getElementById('explainArea');
+        const explainText = document.getElementById('explainText');
+        const nextBtn = document.getElementById('nextBtn');
+        const resultScore = document.getElementById('resultScore');
+        const restartBtn = document.getElementById('restartBtn');
+
+        // ==========================================
+        // 1. 初始化控制与题库切换
+        // ==========================================
+        function initSystem() {
+            bankSelect.innerHTML = "";
+            const keys = Object.keys(DATA_CENTER);
+            if (keys.length === 0) return;
+
+            keys.forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = key;
+                bankSelect.appendChild(opt);
+            });
+
+            currentBankKey = keys[0];
+            initTheme();
+            startQuiz();
+        }
+
+        bankSelect.addEventListener('change', (e) => {
+            currentBankKey = e.target.value;
+            startQuiz();
+        });
+
+        // ==========================================
+        // 2. 真·Fisher-Yates 随机洗牌算法
+        // ==========================================
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // ==========================================
+        // 3. 智能抽题与轮次拼凑逻辑
+        // ==========================================
+        function startQuiz() {
+            const bank = DATA_CENTER[currentBankKey];
+            if (!bank || bank.length === 0) return;
+
+            if (!historyRecords[currentBankKey]) {
+                historyRecords[currentBankKey] = [];
+            }
+            let doneIds = historyRecords[currentBankKey];
+
+            // 自动重置判断：剩余未做数不足1题时清空重新打满
+            if (bank.length - doneIds.length < 1) {
+                doneIds = [];
+                historyRecords[currentBankKey] = [];
+                localStorage.setItem('quizHistory', JSON.stringify(historyRecords));
+            }
+
+            // 提取未做题目的原索引清单
+            let availableIndexes = [];
+            bank.forEach((_, idx) => {
+                if (!doneIds.includes(idx)) availableIndexes.push(idx);
+            });
+
+            // 彻底打乱可用题目的索引清单
+            shuffleArray(availableIndexes);
+
+            // 每轮提取前10道题进行展示
+            let chosenIndexes = availableIndexes.slice(0, 10);
+            currentQuestions = chosenIndexes.map(idx => {
+                return { ...bank[idx], originalIndex: idx };
+            });
+
+            // 立即将抽取的题目加入历史已做集合并持久化缓存
+            currentQuestions.forEach(q => {
+                if (!doneIds.includes(q.originalIndex)) {
+                    doneIds.push(q.originalIndex);
+                }
+            });
+            localStorage.setItem('quizHistory', JSON.stringify(historyRecords));
+
+            currentIndex = 0;
+            score = 0;
+            resultArea.classList.add('hidden');
+            questionArea.classList.remove('hidden');
+            renderQuestion();
+        }
+
+        // ==========================================
+        // 4. 动态题目渲染（集成多选机制）
+        // ==========================================
+        function renderQuestion() {
+            isAnswered = false;
+            selectedIndexes = []; 
+            explainArea.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            multiSubmitBar.classList.add('hidden');
+
+            const currentQuestion = currentQuestions[currentIndex];
+            
+            // 核心修复点：将 textContent 替换为 innerHTML
+            questionText.innerHTML = `(${currentIndex + 1}/10) ${currentQuestion.question}`;
+            
+            scoreBadge.textContent = `得分: ${score}`;
+            
+            // 实时更新顶部进度与百分比动画
+            progressText.textContent = `进度: ${currentIndex + 1} / 10`;
+            progressBar.style.width = `${((currentIndex + 1) / 10) * 100}%`;
+
+            // 判断实际答案数组长度来区分单选、多选类型标签
+            const isMulti = currentQuestion.answer.length > 1;
+            typeBadge.textContent = isMulti ? "MULTIPLE (多选)" : "SINGLE (单选)";
+            typeBadge.className = isMulti 
+                ? "text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-purple-50 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400 border border-purple-100 dark:border-purple-800/50"
+                : "text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50";
+
+            // 构建带有打乱顺序的选项映射
+            let optionsObjects = currentQuestion.options.map((opt, idx) => ({ text: opt, origIdx: idx }));
+            shuffleArray(optionsObjects);
+            currentRenderedOptionsOrder = optionsObjects; // 保存打乱顺序的全局状态映射
+
+            optionsContainer.innerHTML = "";
+            optionsObjects.forEach((item, index) => {
+                const labelLetter = String.fromCharCode(65 + index); // A, B, C, D
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left px-5 py-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all font-medium text-sm md:text-base flex items-center space-x-3 group";
+                btn.innerHTML = `
+                    <span class="w-7 h-7 flex-shrink-0 rounded-lg bg-slate-100 dark:bg-slate-700 group-hover:bg-white dark:group-hover:bg-slate-600 border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-xs transition-colors option-letter">
+                        ${labelLetter}
+                    </span>
+                    <span class="option-text flex-1">${item.text}</span>
+                `;
+                
+                // 绑定点击交互
+                btn.onclick = () => handleOptionClick(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            // 如果是多选题，则直接强制显示“提交答案”按钮
+            if (isMulti) {
+                multiSubmitBar.classList.remove('hidden');
+            }
+        }
+
+        // ==========================================
+        // 5. 选项点击流处理
+        // ==========================================
+        function handleOptionClick(renderedIndex) {
+            if (isAnswered) return; // 判定锁定后不可操作
+
+            const currentQuestion = currentQuestions[currentIndex];
+            const isMulti = currentQuestion.answer.length > 1;
+            const origIdx = currentRenderedOptionsOrder[renderedIndex].origIdx;
+
+            if (isMulti) {
+                // 多选模式：执行切入/摘除状态维护
+                const existingIdx = selectedIndexes.indexOf(origIdx);
+                if (existingIdx > -1) {
+                    selectedIndexes.splice(existingIdx, 1);
+                    setOptionStyle(renderedIndex, 'default');
+                } else {
+                    selectedIndexes.push(origIdx);
+                    setOptionStyle(renderedIndex, 'selected');
+                }
+            } else {
+                // 单选模式：直接注入并启动最终核验
+                selectedIndexes = [origIdx];
+                setOptionStyle(renderedIndex, 'selected');
+                checkYourAnswer();
+            }
+        }
+
+        // 统一控制前端状态的高级渲染类
+        function setOptionStyle(renderedIndex, state) {
+            const btn = optionsContainer.children[renderedIndex];
+            if (!btn) return;
+            const letterSpan = btn.querySelector('.option-letter');
+
+            if (state === 'selected') {
+                btn.className = "w-full text-left px-5 py-4 rounded-xl border-2 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 transition-all font-medium text-sm md:text-base flex items-center space-x-3 group shadow-sm";
+                letterSpan.className = "w-7 h-7 flex-shrink-0 rounded-lg bg-indigo-500 text-white flex items-center justify-center font-bold text-xs transition-colors option-letter";
+            } else if (state === 'default') {
+                btn.className = "w-full text-left px-5 py-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all font-medium text-sm md:text-base flex items-center space-x-3 group";
+                letterSpan.className = "w-7 h-7 flex-shrink-0 rounded-lg bg-slate-100 dark:bg-slate-700 group-hover:bg-white dark:group-hover:bg-slate-600 border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-xs transition-colors option-letter";
+            } else if (state === 'right') {
+                btn.className = "w-full text-left px-5 py-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 transition-all font-medium text-sm md:text-base flex items-center space-x-3";
+                letterSpan.className = "w-7 h-7 flex-shrink-0 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold text-xs option-letter";
+            } else if (state === 'wrong') {
+                btn.className = "w-full text-left px-5 py-4 rounded-xl border-2 border-rose-500 bg-rose-50/40 dark:bg-rose-950/20 transition-all font-medium text-sm md:text-base flex items-center space-x-3";
+                letterSpan.className = "w-7 h-7 flex-shrink-0 rounded-lg bg-rose-500 text-white flex items-center justify-center font-bold text-xs option-letter";
+            }
+        }
+
+        // ==========================================
+        // 6. 核验与正误判定（答错统一展示解析与下一题按钮）
+        // ==========================================
+        function checkYourAnswer() {
+            if (isAnswered) return;
+            isAnswered = true;
+            multiSubmitBar.classList.add('hidden'); // 隐藏多选提交栏
+
+            const currentQuestion = currentQuestions[currentIndex];
+            const correctAnswers = currentQuestion.answer; // 正确答案的索引数组
+
+            // 判定选择的是否与正确答案完全相同
+            const isCorrect = correctAnswers.length === selectedIndexes.length &&
+                              correctAnswers.every(val => selectedIndexes.includes(val));
+
+            // 高亮展示选项色值反馈
+            currentRenderedOptionsOrder.forEach((item, index) => {
+                const inCorrectList = correctAnswers.includes(item.origIdx);
+                const inSelectedList = selectedIndexes.includes(item.origIdx);
+
+                if (inCorrectList) {
+                    setOptionStyle(index, 'right'); // 正确选项染绿
+                } else if (inSelectedList && !inCorrectList) {
+                    setOptionStyle(index, 'wrong'); // 错选选项染红
+                }
+            });
+
+            if (isCorrect) {
+                score += 10;
+                scoreBadge.textContent = `得分: ${score}`;
+                // 答对：1.2秒延迟自动跳转下一题
+                setTimeout(() => {
+                    goToNextQuestion();
+                }, 1200);
+            } else {
+                // 答错：显示答案解析与“下一题”控制按钮
+                explainText.textContent = currentQuestion.explain || "该题暂无具体微观解析。";
+                explainArea.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+            }
+        }
+
+        // 点击提交控制触发
+        submitAnswerBtn.onclick = () => {
+            if (selectedIndexes.length === 0) {
+                alert("请先勾选您的答案选项！");
+                return;
+            }
+            checkYourAnswer();
+        };
+
+        function goToNextQuestion() {
+            currentIndex++;
+            if (currentIndex < 10 && currentIndex < currentQuestions.length) {
+                renderQuestion();
+            } else {
+                showQuizEndSummary();
+            }
+        }
+
+        // ==========================================
+        // 7. 结算页面渲染
+        // ==========================================
+        function showQuizEndSummary() {
+            questionArea.classList.add('hidden');
+            resultArea.classList.remove('hidden');
+            resultScore.textContent = `您的最终得分为：${score} / ${currentQuestions.length * 10}`;
+        }
+
+        restartBtn.onclick = startQuiz;
+
+        // ==========================================
+        // 8. 强力多维映射键盘快捷键支持 (全功能回车闭环)
+        // ==========================================
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+
+            // 如果当前在结算汇总页面，按回车快速重开新一轮
+            if (!resultArea.classList.contains('hidden')) {
+                if (e.key === 'Enter') {
+                    startQuiz();
+                }
+                return;
+            }
+
+            // 如果当前正在答题状态中
+            if (!questionArea.classList.contains('hidden')) {
+                // A-D / 1-4 选项快捷键
+                const keyMap = { 'a': 0, 'b': 1, 'c': 2, 'd': 3, '1': 0, '2': 1, '3': 2, '4': 3 };
+                if (key in keyMap) {
+                    e.preventDefault();
+                    handleOptionClick(keyMap[key]);
+                    return;
+                }
+
+                // 回车键 (Enter) 场景路由
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    
+                    // 场景A：多选尚未提交状态 -> 触发提交核验
+                    const isMulti = currentQuestions[currentIndex]?.answer.length > 1;
+                    if (isMulti && !isAnswered) {
+                        if (selectedIndexes.length === 0) return;
+                        checkYourAnswer();
+                        return;
+                    }
+                    
+                    // 场景B：答错锁死展示解析状态 -> 触发切入下一题
+                    if (isAnswered && !nextBtn.classList.contains('hidden')) {
+                        goToNextQuestion();
+                    }
+                }
+            }
+        });
+
+        // ==========================================
+        // 9. 手动深色模式管理逻辑
+        // ==========================================
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+
+        function initTheme() {
+            const cachedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (cachedTheme === 'dark' || (!cachedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+                themeIcon.textContent = "☀️";
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.textContent = "🌙";
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                themeIcon.textContent = "🌙";
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                themeIcon.textContent = "☀️";
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // 启动引导
+        window.onload = initSystem;
+    </script>
+</body>
+</html>
